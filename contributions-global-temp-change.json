@@ -1,0 +1,41 @@
+{
+  "chart": {
+    "title": "Global warming: Contributions to the change in global mean surface temperature",
+    "subtitle": "This is shown as a country or region's share of the global mean surface temperature change as a result of its cumulative emissions of three gases – carbon dioxide, methane, and nitrous oxide.",
+    "note": "Cooling effects of sulphur dioxide and aerosols are not included – this means the net impact for some countries can be negative. Methane and nitrous oxide are included using the GWP* approach.",
+    "citation": "Jones et al. (2024)",
+    "originalChartUrl": "https://ourworldindata.org/grapher/contributions-global-temp-change?v=1&csvType=full&useColumnShortNames=false",
+    "selection": [
+      "United States",
+      "European Union (28)",
+      "China",
+      "India",
+      "Russia",
+      "Brazil",
+      "United Kingdom"
+    ]
+  },
+  "columns": {
+    "Share of contribution to global warming": {
+      "titleShort": "Share of contribution to global warming",
+      "titleLong": "Share of contribution to global warming",
+      "descriptionShort": "Measured as a percentage of the world's temperature change.",
+      "descriptionKey": [
+        "This temperature change measures each country's contribution to global mean surface temperature (GMST) rise from its cumulative emissions of carbon dioxide, methane and nitrous oxide.",
+        "The warming effects of each gas are calculated based on cumulative CO₂-equivalent emissions using the Global Warming Potential (GWP*) approach."
+      ],
+      "shortUnit": "%",
+      "unit": "%",
+      "timespan": "1851-2023",
+      "type": "Numeric",
+      "owidVariableId": 998942,
+      "shortName": "share_of_temperature_response_ghg_total",
+      "lastUpdated": "2024-11-21",
+      "nextUpdate": "2025-11-21",
+      "citationShort": "Jones et al. (2024) – with major processing by Our World in Data",
+      "citationLong": "Jones et al. (2024) – with major processing by Our World in Data. “Share of contribution to global warming” [dataset]. Jones et al., “National contributions to climate change 2024.2” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/998942.metadata.json"
+    }
+  },
+  "dateDownloaded": "2024-12-01"
+}
