@@ -1,0 +1,278 @@
+---
+title: "SURV727 Final Project"
+author: "Xiaoqing Liu"
+date: "2024-11-29"
+output: pdf_document
+---
+
+Github link: <https://github.com/xliu-6807/SURV727-Final-Project>
+
+```{r}
+library(tidyr)
+library(shiny)
+library(leaflet)
+library(readr)
+library(rvest)
+library(ggplot2)
+library(jsonlite)
+library(dplyr)
+library(gtrendsR)
+getwd()
+```
+
+```{r}
+# Access the original data of the change in global mean surface temperature from Our World in Data website
+df <- read.csv("https://ourworldindata.org/grapher/contributions-global-temp-change.csv?v=1&csvType=full&useColumnShortNames=true")
+df
+```
+
+```{r}
+# Filter the data for years 2013 to 2023 to analize data over the past decade
+filtered_data <- df %>%
+  filter(Year >= 2013 & Year <= 2023) %>% 
+  mutate(share_of_temperature_response_ghg_total = round(share_of_temperature_response_ghg_total, 8))
+
+# View the filtered and formatted data
+filtered_data
+```
+
+```{r}
+# Exclude those continenal from the table
+non_countries <- c("World", "High-income countries", "OECD (Jones et al.)", "Asia", "Upper-middle-income countries", "Europe", "North America", "Asia (excl. China and India)", "Lower-middle-income countries", "European Union (28)", "Europe (excl. EU-27)", "Europe (excl. EU-28)", "European Union (27)", "Least developed countries (Jones et al.)","Low-income countries", "North America (excl. USA)", "South America", "Africa")
+# Sort the data by share_of_temperature_response_ghg_total in descending order
+sorted_data <- filtered_data %>%
+  arrange(desc(share_of_temperature_response_ghg_total))%>%
+  filter(!Entity %in% non_countries)%>%
+  select(-Code)
+# View the sorted data
+sorted_data
+```
+
+```{r}
+# Pull data by google Trends API, we are interested in the search terms for immigration, temperature and sea level in the US over the past decade.
+US_migration <- gtrends(c("immigration", "temperature"),
+               geo = "US", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(US_migration)
+
+US_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "US", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(US_migration2)
+```
+
+```{r}
+#Pull google trends data for China
+CN_migration <- gtrends(c("immigration", "temperature"),
+               geo = "CN", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(CN_migration)
+
+CN_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "CN", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(CN_migration2)
+```
+
+```{r}
+BR_migration <- gtrends(c("immigration", "temperature"),
+               geo = "BR", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(BR_migration)
+
+BR_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "BR", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(BR_migration2)
+```
+
+# compare temperature
+
+```{r}
+# Read CSV file in laptop
+data <- read_csv("/Users/xiaoqingliu/Documents/contributions-global-temp-change/contributions-global-temp-change.csv")
+
+# Filter for selected countries
+selected_countries <- c("United States", "China", "India", "Russia", "Brazil")
+filtered_data <- data %>%
+  filter(Entity %in% selected_countries)
+
+# Rename columns for clarity
+colnames(filtered_data) <- c("Country", "Code", "Year", "Contribution")
+
+# Plot the data
+ggplot(filtered_data, aes(x = Year, y = Contribution, color = Country)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Contributions to Global Mean Surface Temperature Change",
+    x = "Year",
+    y = "Share of Global Warming (%)",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_blank()
+  )
+
+
+```
+
+```{r}
+#test
+
+```
+
+
+
+```{r}
+# Load the data source
+sea_level_data <- read.csv("/Users/xiaoqingliu/Documents/GlobalStationsLinearSeaLevelTrends.csv")
+# Ensure necessary columns are numeric
+sea_level_data$Latitude <- as.numeric(sea_level_data$Latitude)
+sea_level_data$Longitude <- as.numeric(sea_level_data$Longitude)
+sea_level_data$MSL.Trends..mm.yr. <- as.numeric(sea_level_data$MSL.Trends..mm.yr.)
+
+# Define UI
+ui <- fluidPage(
+  titlePanel("Global Sea Level Trends"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("range", "Select Year Range:", 
+                  min = min(sea_level_data$First.Year, na.rm = TRUE), 
+                  max = max(sea_level_data$Last.Year, na.rm = TRUE), 
+                  value = c(min(sea_level_data$First.Year, na.rm = TRUE), 
+                            max(sea_level_data$Last.Year, na.rm = TRUE))),
+      sliderInput("trendRange", "Select Trend Range (mm/year):", 
+                  min = min(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                  max = max(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                  value = c(min(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                            max(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE)))
+    ),
+    
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
+)
+
+# Define server logic
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    # Filter data based on user inputs
+    filtered_data <- subset(sea_level_data, 
+                            First.Year >= input$range[1] & Last.Year <= input$range[2] & 
+                            MSL.Trends..mm.yr. >= input$trendRange[1] & 
+                            MSL.Trends..mm.yr. <= input$trendRange[2])
+    
+    # Create the map
+    leaflet(filtered_data) %>%
+      addTiles() %>%
+      addCircleMarkers(
+        ~Longitude, ~Latitude,
+        radius = ~abs(MSL.Trends..mm.yr.) * 2, # Size based on trend magnitude
+        color = ~ifelse(MSL.Trends..mm.yr. >= 0, "green", "red"), # Positive (green), Negative (red)
+        popup = ~paste("<b>Station:</b>", Station.Name, "<br>",
+                       "<b>Trend (mm/year):</b>", MSL.Trends..mm.yr., "<br>",
+                       "<b>Years:</b>", paste(First.Year, "-", Last.Year))
+      )
+  })
+}
+
+# Run the Shiny graphics
+shinyApp(ui, server)
+```
+
+```{r}
+#load data source from FRED
+Brazil_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMBRA.csv")
+Brazil_netmigration
+
+#Convert the DATE column to Date format
+Brazil_netmigration$DATE <- as.Date(Brazil_netmigration$DATE)
+
+# Plot the data
+ggplot(Brazil_netmigration, aes(x = DATE, y = SMPOPNETMBRA)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for Brazil",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
+
+```{r}
+#load data source from FRED
+US_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMUSA.csv")
+US_netmigration
+
+#Convert the DATE column to Date format
+US_netmigration$DATE <- as.Date(US_netmigration$DATE)
+
+# Plot the data
+ggplot(US_netmigration, aes(x = DATE, y = SMPOPNETMUSA)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for US",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
+
+```{r}
+#load data source from FRED
+CN_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMCHN.csv")
+CN_netmigration
+
+#Convert the DATE column to Date format
+CN_netmigration$DATE <- as.Date(CN_netmigration$DATE)
+
+# Plot the data
+ggplot(CN_netmigration, aes(x = DATE, y = SMPOPNETMCHN)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for CN",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
