@@ -1,0 +1,358 @@
+---
+title: "How has climate change influenced migration patterns over the past decade?"
+subtitle: Final report for SURV727
+author: Xiaoqing Liu
+data: 2024-12-11
+format: 
+   pdf: 
+     echo: false
+     warning: false
+     message: false
+editor: visual
+always_allow_html: true
+---
+Github link: <https://github.com/xliu-6807/SURV727-Final-Project>
+
+```{r setup, include=FALSE, tidy=TRUE}
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE, 
+                      autodep = TRUE, cache.comments = FALSE,
+                      message = FALSE, warning = FALSE)
+```
+
+
+```{r, output=FALSE}
+library(tidyr)
+library(shiny)
+library(leaflet)
+library(readr)
+library(rvest)
+library(ggplot2)
+library(jsonlite)
+library(dplyr)
+library(gtrendsR)
+getwd()
+```
+
+#Abstract
+The purpose of this research project is to investigate for the correlation between climate change factors and migration patterns, particularly focusing on emigration from countries with relatively adverse climate conditions. This study will specifically examine two major climate change phenomena: surface temperature and sea level rise. To deeply analyze and give an answer for this question, I collected climate data and filter them based on their significant contributions to global temperature changes and rising sea levels. Data from public and sea-level statistics databases reveal that these environmental factors may linked to migration flows. This analysis underscores the interplay between climate change and human mobility, offering insights into how nations can address migration challenges in the face of escalating environmental pressures.
+
+
+
+#Introduction
+Climate change remains a pressing problem for our environment especially as industrialization keep developing in the 21st century. This problem is significantly impacting environmental systems and human behaviors. Rising global temperatures, increasing sea levels, and extreme weather conditions are not only transforming ecosystems but are also influencing patterns of human migration. Over the past decade, migration has been discussed as one of the possible responses to these changes. However, these environmental stressors directly cause migration remains a subject of ongoing debate. Kelman (2020) states that migration influenced by climate change is rarely the result of a single factor, suggesting that it is shaped by multifaceted circumstances rather than direct causation. Similarly, Mence and Parrinder (2017) emphasize the challenges policymakers face in defining and addressing environmentally related migration, noting the difficulty in isolating environmental factors from broader migration dynamics.
+
+On the other hand, according to some statistical report from the United Nations, the global mean sea level has been rising at an accelerated rate of 4.5 millimeters per year since 2013, primarily due to melting polar ice caps and the thermal expansion of warming ocean waters (World Meteorological Organization, as cited in UN, 2021). These changes also have devastating impacts on low-lying coastal and island communities, leading to the loss of habitable land, salinization of freshwater resources, and increased flooding risks (UN, 2023). In addition, rising global temperatures contribute to more frequent and severe droughts, heatwaves, and storms, which threaten food and water security and undermine livelihoods, particularly in agrarian societies. The United Nations emphasizes that these pressures exacerbate competition for scarce resources, heighten social tensions, and can lead to displacement and conflict (UN, 2023).
+
+Although many resources and researchers state that climate change issue is making the environment worse and worse for people, the relationship between environmental changes and human migration is far more complex than a direct cause-and-effect scenario, migration decisions are rarely influenced by one factor alone. To make a suitable statement and give an answer for how has climate change influenced migration patterns, a comprehensive analysis by employing different type of data is necessary. This includes integrating quantitative data, such as temperature trends, sea-level rise metrics, and net migration statistics, with qualitative insights from social science research that explores human decision-making and resilience.
+
+```{r, output=FALSE}
+# Access the original data of the change in global mean surface temperature from Our World in Data website
+df <- read.csv("https://ourworldindata.org/grapher/contributions-global-temp-change.csv?v=1&csvType=full&useColumnShortNames=true")
+df
+```
+
+
+```{r, output=FALSE}
+# Filter the data for years 2013 to 2023 to analize data over the past decade
+filtered_data <- df %>%
+  filter(Year >= 2013 & Year <= 2023) %>% 
+  mutate(share_of_temperature_response_ghg_total = round(share_of_temperature_response_ghg_total, 8))
+
+# View the filtered and formatted data
+filtered_data
+```
+
+
+```{r, output=FALSE}
+# Exclude those continenal from the table
+non_countries <- c("World", "High-income countries", "OECD (Jones et al.)", "Asia", "Upper-middle-income countries", "Europe", "North America", "Asia (excl. China and India)", "Lower-middle-income countries", "European Union (28)", "Europe (excl. EU-27)", "Europe (excl. EU-28)", "European Union (27)", "Least developed countries (Jones et al.)","Low-income countries", "North America (excl. USA)", "South America", "Africa")
+# Sort the data by share_of_temperature_response_ghg_total in descending order
+sorted_data <- filtered_data %>%
+  arrange(desc(share_of_temperature_response_ghg_total))%>%
+  filter(!Entity %in% non_countries)%>%
+  select(-Code)
+# View the sorted data
+sorted_data
+```
+
+#Methodology
+
+#Data Collection
+The first step of the data source collection, I search and download csv data from “Our World in Data”. This public dataset shows how each country and region contributes to the change in global mean surface temperature from 1851 to 2023. The second dataset is the relative sea level trends from the NOAA. This dataset contains the global sea level trends from 1807 to 2022, specifically focus on those countries that has numerous of population. After collecting enough data source of climate change conditions, I also collect net migration flows data of some outstanding countries from FRED. 
+
+
+#Method and Finding
+To access the surface temperature data, I used read.csv function to display the original dataset in R. This dataset shows the contribution of global surface temperature changing on most of the countries and regions. Since the dataset contain too many countries and the timeline of the statistic is too long which is not necessary for analysis. I applied dplyr package and used filter function to manage data by selecting those within the past decade. After that, I clean data to remove the column of country code and some statistical data of the whole continental instead of a country which are not useful for analyzing purpose and filter data again by arranging them in descending order to look for those countries with outstanding contribution.
+
+After finishing the steps above, the results show that from the past decade, the United States, China, Russia, Brazil, and India has a remain high surface temperature compared to others. Now, to have a better view of the trends of the rising temperature, I made a visualization for those five counties. We can see that the US contribute the highest surface temperature from 1850 to 2023, although it started to decrease around 1950, it still much higher than other countries. The following countries with high mean surface temperature are Russia and India, however, their variabilities are quite stable. China and Brazil do not contribute a lot on global surface temperature among the top 5 countries, but focus on the past 2 decades, the mean surface temperature was keep increasing and exceed Russia and India.
+
+
+```{r}
+# Read CSV file in laptop
+data <- read_csv("/Users/xiaoqingliu/Documents/contributions-global-temp-change/contributions-global-temp-change.csv")
+
+# Filter for selected countries
+selected_countries <- c("United States", "China", "India", "Russia", "Brazil")
+filtered_data <- data %>%
+  filter(Entity %in% selected_countries)
+
+# Rename columns for clarity
+colnames(filtered_data) <- c("Country", "Code", "Year", "Contribution")
+
+# Plot the data
+ggplot(filtered_data, aes(x = Year, y = Contribution, color = Country)) +
+  geom_line(size = 1) +
+  labs(
+    title = "Contributions to Global Mean Surface Temperature Change",
+    x = "Year",
+    y = "Share of Global Warming (%)",
+    color = "Country"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+
+To access the sea level data, I employed web scraping and storing the extracted data from NOAA in a structured format of CSV file. It contains the relative sea level trends recorded by NOAA’s laboratory. I import the data and create an interactive graphics using shiny graphic. From the shiny graph and the original dataset, it shows that most of coast around the world are experiencing rising sea level, except for some places in Northern Europe and Canada. And sea levels of the 3 three countries (US, China, and Brazil) are also increasing, especially for their southeast coast. To make the analysis easier, I decided to focus on those countries. Because they are outstanding in both high mean surface temperature and rising sea level trends.
+
+```{r}
+# Load the data source
+sea_level_data <- read.csv("/Users/xiaoqingliu/Documents/GlobalStationsLinearSeaLevelTrends.csv")
+# Ensure necessary columns are numeric
+sea_level_data$Latitude <- as.numeric(sea_level_data$Latitude)
+sea_level_data$Longitude <- as.numeric(sea_level_data$Longitude)
+sea_level_data$MSL.Trends..mm.yr. <- as.numeric(sea_level_data$MSL.Trends..mm.yr.)
+
+# Define UI
+ui <- fluidPage(
+  titlePanel("Global Sea Level Trends"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("range", "Select Year Range:", 
+                  min = min(sea_level_data$First.Year, na.rm = TRUE), 
+                  max = max(sea_level_data$Last.Year, na.rm = TRUE), 
+                  value = c(min(sea_level_data$First.Year, na.rm = TRUE), 
+                            max(sea_level_data$Last.Year, na.rm = TRUE))),
+      sliderInput("trendRange", "Select Trend Range (mm/year):", 
+                  min = min(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                  max = max(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                  value = c(min(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE),
+                            max(sea_level_data$MSL.Trends..mm.yr., na.rm = TRUE)))
+    ),
+    
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
+)
+
+# Define server logic
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    # Filter data based on user inputs
+    filtered_data <- subset(sea_level_data, 
+                            First.Year >= input$range[1] & Last.Year <= input$range[2] & 
+                            MSL.Trends..mm.yr. >= input$trendRange[1] & 
+                            MSL.Trends..mm.yr. <= input$trendRange[2])
+    
+    # Create the map
+    leaflet(filtered_data) %>%
+      addTiles() %>%
+      addCircleMarkers(
+        ~Longitude, ~Latitude,
+        radius = ~abs(MSL.Trends..mm.yr.) * 2, # Size based on trend magnitude
+        color = ~ifelse(MSL.Trends..mm.yr. >= 0, "green", "red"), # Positive (green), Negative (red)
+        popup = ~paste("<b>Station:</b>", Station.Name, "<br>",
+                       "<b>Trend (mm/year):</b>", MSL.Trends..mm.yr., "<br>",
+                       "<b>Years:</b>", paste(First.Year, "-", Last.Year))
+      )
+  })
+}
+
+# Run the Shiny graphics
+shinyApp(ui, server)
+```
+
+
+#Analysis
+#Based on Google search trend interest
+In order to determine the intentions of the people in these countries regarding climate change conditions over time, I employed Google search frequency trends data by package “gtrends”. In the United States, searches related to "temperature" exhibit consistent peaks over time, reflecting growing public concern or awareness of climate-related issues. Meanwhile, interest in "immigration" demonstrates relatively stable but lower activity, comparatively, "sea level" remains a lesser-searched term, suggesting that the immediate impacts of sea level rise may not yet resonate as strongly with the public. For now, it indicates that climate issues may not a great influence on migration.
+
+
+```{r}
+# Pull data by google Trends API, we are interested in the search terms for immigration, temperature and sea level in the US over the past decade.
+US_migration <- gtrends(c("immigration", "temperature"),
+               geo = "US", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(US_migration)
+
+
+US_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "US", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(US_migration2)
+```
+
+For China, public interest in "temperature" has shown a steep upward trend over the years, surpassing other climate-related topics, indicating an increasing awareness of rising temperatures and their effects. Interest in "immigration" is also relatively high align with temperature. "Sea level" trends are negligible, likely reflecting a lower public focus on this aspect of climate change, despite the rising risks to coastal regions.
+
+```{r}
+#Pull google trends data for China
+CN_migration <- gtrends(c("immigration", "temperature"),
+               geo = "CN", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(CN_migration)
+
+CN_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "CN", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(CN_migration2)
+```
+
+In Brazil, searches for "temperature" consistently dominate, highlighting the heightened sensitivity of the population to climate variations, which directly impact agriculture and livelihoods. Interest in immigration activity is quite high, it seems like climate issues would be one of the main reason to affect migration activities in Brail.
+
+```{r}
+BR_migration <- gtrends(c("immigration", "temperature"),
+               geo = "BR", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(BR_migration)
+
+BR_migration2 <- gtrends(c("immigration", "sea level"),
+               geo = "BR", 
+               time = "2013-01-01 2023-12-31", 
+               low_search_volume = TRUE)
+
+plot(BR_migration2)
+```
+
+#Based on real-world statistics
+Bsed on the net migration datasets, I use "ggplot2" package to plot the data to better understand the migration flows of the countries. 
+
+
+Net migration for Brazil is 0 before 2012, this indicated that people the number of people moving into a country and the number of people leaving the country during the period of time is basically the same. But there is a dramatic increase over the past decade, with a substantial rise in the number of people entering the country compared to those leaving. Let's looking back to the cliamte change conditions, temperature data indicates a steady increase over those time, which might exacerbate challenges in agriculture and rural livelihoods, sea level data shows a consistent rise along Brazil’s coastline, increasing risks to coastal areas. Based on all those data, those dramatic increase immigrants seems unexcepted.
+
+```{r}
+#load data source from FRED
+Brazil_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMBRA.csv")
+#Convert the DATE column to Date format
+Brazil_netmigration$DATE <- as.Date(Brazil_netmigration$DATE)
+
+# Plot the data
+ggplot(Brazil_netmigration, aes(x = DATE, y = SMPOPNETMBRA)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for Brazil",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
+
+The net migration data for the United States is positive for the past 60 years, there is a significant increase in net migration leading up to the year 2000 and reach the peak, followed by a sharp decline and a gradual decrease in recent years. When compared to climate data, the United States has experienced rising sea levels and higher surface temperatures in the past decade. However, the net migration trend does not show a clear correlation with these climate factors based on the data alone.
+
+```{r}
+#load data source from FRED
+US_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMUSA.csv")
+
+#Convert the DATE column to Date format
+US_netmigration$DATE <- as.Date(US_netmigration$DATE)
+
+# Plot the data
+ggplot(US_netmigration, aes(x = DATE, y = SMPOPNETMUSA)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for US",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
+
+The net migration data for China exhibits significant fluctuations over the decades, with predominantly negative values indicating that more people are emigrating from the country than immigrating. In recent years, the trend shows a sharp decline in net migration, suggesting an acceleration in the rate of emigration. When compared to the temperature and sea level data, China's rising temperatures over the past decades might have impacted rural livelihoods and agricultural productivity, potentially pushing individuals to seek opportunities abroad. Additionally, the steady rise in sea levels could exacerbate risks in China's densely populated coastal areas, contributing to internal displacement or outward migration. However, this may mean that cliamte change could be a good reason for people to live their contry but there is no direct effect on those activities.
+
+```{r}
+#load data source from FRED
+CN_netmigration <- read.csv("/Users/xiaoqingliu/Documents/net migration/SMPOPNETMCHN.csv")
+
+#Convert the DATE column to Date format
+CN_netmigration$DATE <- as.Date(CN_netmigration$DATE)
+
+# Plot the data
+ggplot(CN_netmigration, aes(x = DATE, y = SMPOPNETMCHN)) +
+  geom_line(color = "blue", size = 1) +
+  geom_point(size = 2, color = "blue") +
+  labs(
+    title = "Net Migration for CN",
+    x = "Year",
+    y = "People",
+    caption = "Source: World Bank"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10)
+  )
+```
+
+#Conclusion
+The analysis of net migration data reveals distinct patterns across Brazil, the United States, and China over the past decade. Brazil experienced a dramatic increase in net migration, with more people entering than leaving, a trend that appears unexpected given the steady rise in surface temperatures and sea levels, which have impacted agricultural productivity and coastal areas.
+
+In the United States, net migration peaked around the year 2000 but has gradually declined in recent years. Despite rising temperatures and increasing sea levels along coastal regions, the data does not show a direct correlation between these climate factors and migration flows, suggesting that other socioeconomic and policy factors may be at play.
+
+China’s net migration data demonstrates significant fluctuations, with a sharp decline in recent years indicating accelerated emigration. Rising temperatures and sea levels likely contribute to stress on rural livelihoods and densely populated coastal areas, yet the data does not conclusively link these environmental pressures to emigration trends.
+
+Public search trends for "temperature" and "sea level" highlight growing awareness of climate change issues in all three countries. However, the lack of strong correlations between these concerns and migration patterns. It also indicated that people might have intention to leave the country if climate change conditions are getting worse, however, there are many other factors that could stop them from moving. For eaxmple, their social relationship, and economic limitation. On the other hand, migration is a very important decision for people, they would consider whether move or not by considering other consequences. 
+
+In conclusion, the findings underscore the multifaceted nature of migration and the need for further research to disentangle the effects of environmental, social, and economic factors in shaping human mobility.
+
+
+#References
+
+Kelman, Ilan. “Does Climate Change Cause Migration?” Refuge in a Moving World: Tracing Refugee and Migrant Journeys across Disciplines, edited by Elena Fiddian-Qasmiyeh, UCL Press, 2020, pp. 123–36. JSTOR, https://doi.org/10.2307/j.ctv13xprtw.15.
+
+Mence, Victoria, and Alex Parrinder. “Environmentally Related International Migration: Policy Challenges.” A Long Way to Go: Irregular Migration Patterns, Processes, Drivers and Decision-Making, edited by MARIE MCAULIFFE and KHALID KOSER, ANU Press, 2017, pp. 317–42. JSTOR, http://www.jstor.org/stable/j.ctt20krxxh.20.
+
+United Nations. "Ocean Impacts: Climate Issues." United Nations Climate Change, United Nations, https://www.un.org/en/climatechange/science/climate-issues/ocean-impacts. 2021.
+
+United Nations. “Stressing Rising Seas Already Creating Instability, Conflict, Secretary-General Says Security Council Has Critical Role in Addressing Devastating Challenges.” https://press.un.org/en/2023/sgsm21688.doc.htm?utm_source=chatgpt.com. 2023.
+
+NOAA, "Relative Sea Level Trends", https://tidesandcurrents.noaa.gov/sltrends/sltrends.html
+
+“Data Page: Share of contribution to global warming”, part of the following publication: Hannah Ritchie, Pablo Rosado and Max Roser (2023) - “CO₂ and Greenhouse Gas Emissions”. Data adapted from Jones et al.. Retrieved from https://ourworldindata.org/grapher/contributions-global-temp-change [online resource]
+
+FRED, "Net migration for the United States", https://fred.stlouisfed.org/series/SMPOPNETMUSA
+
+FRED, "Net migration for Brazil", https://fred.stlouisfed.org/series/SMPOPNETMBRA
+
+FRED, " Net migration for China", https://fred.stlouisfed.org/series/SMPOPNETMCHN
